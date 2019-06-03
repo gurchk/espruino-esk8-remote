@@ -15,3 +15,6 @@ The follwing 2 bytes after the payload are the checksum. (see crc.h)
 The byte stream it terminated with a 0x03.
 
 http://forum.espruino.com/conversations/330786/#comment14629549
+
+# Parts list
+https://docs.google.com/spreadsheets/d/1v0tvWRuCTawj9qs5H4itTRpZTiDidkjRE_8K7aALIss/edit#gid=0
