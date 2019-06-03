@@ -1,0 +1,22 @@
+/*
+ * Created by: Gustav on 2019-06-03
+ * @author: Gustav Karlström <gustav@karlakonsult.se>
+ */
+
+### DONE
+- Lock behaviour, long press lock/unlock
+- Different modes, drive mode / settings mode dubble click for mode change
+
+### TODO
+- Battey voltage
+
+- Cruise control
+- Display on startup
+- Code cleanup, remove shit varaibles and normal functions
+- Security lockdown / programmer available
+- UART/VESC communication
+- Optimize drawing function
+- Trip timer with getTime();
+- Implement temperature with E.getTemperature();
+- Save old batteryVoltage value and display 0n init / clear the bufffer of values some smart way
+
