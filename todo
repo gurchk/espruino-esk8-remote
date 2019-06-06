@@ -6,9 +6,10 @@
 ### DONE
 - Lock behaviour, long press lock/unlock
 - Different modes, drive mode / settings mode dubble click for mode change
+- Battey voltage
 
 ### TODO
-- Battey voltage
+- DONT LEAVE INIT SCREEN UNLESS REMOTE IS CONNECTED TIMEOUT ON 20 sec ???
 
 - Cruise control
 - Display on startup
@@ -18,5 +19,4 @@
 - Optimize drawing function
 - Trip timer with getTime();
 - Implement temperature with E.getTemperature();
-- Save old batteryVoltage value and display 0n init / clear the bufffer of values some smart way
-
+- get Connection strength

@@ -1,20 +1,5 @@
-//Variable Definitions
 
-const joyStickPin = D27;
-/* 
-S :  single short touch to switch on 
-SS : double short touch to switch off
-*/
 pinMode(D27, 'input_pullup');
-
-// var SWBtn = require("https://raw.githubusercontent.com/muet/EspruinoDocs/master/modules/SWButton.js");
-// var joyStickBtn = new SWBtn((k) => {
-//   console.log("JoystickBtn detected " + k);
-//   if (k === "S")
-//     LED2.set();
-//   else if (k === "SS")
-//     LED3.reset();
-// }, joyStickPin);
 
 
 //------------------Animations------------------
@@ -69,7 +54,16 @@ const displayPins = {
   sda: D25
 };
 
-
+const connectionAnimationOptions = [
+  [csEmpty, 110 - 100, 3],
+  [csOne, 108 - 100, 3],
+  [csTwo, 106 - 100, 2],
+  [csFull, 104 - 100, 0],
+  [csFull, 104 - 100, 0],
+  [csTwo, 106 - 100, 2],
+  [csOne, 108 - 100, 3],
+  [csEmpty, 110 - 100, 3],
+];
 var gatt;
 var char;
 let service;
@@ -81,7 +75,8 @@ var batVoltage;
 var avgBatVoltage = 0;
 
 var batteryFinal = 0;
-
+var rx = 0, ry = 0;
+let currentMode = null;
 
 var counter = 1;
 
@@ -93,7 +88,7 @@ let modeChangeTimeout = null;
 let shortClickCount = 0;
 
 
-var draw = setInterval(() => { }, 100);
+let activeDrawInterval = null;
 
 const batteryBoy = (function batteryBoyIIFE() {
   let rawData = [];
@@ -110,6 +105,9 @@ const batteryBoy = (function batteryBoyIIFE() {
     },
     clearSamples: () => {
       rawData = [];
+    },
+    getRawDataAmount: () => {
+      return rawData.length;
     },
     roundTo: (number, decimals) => {
       let negative = false;
@@ -131,8 +129,27 @@ const batteryBoy = (function batteryBoyIIFE() {
   };
 })();
 
+const driveModeOrganizer = (function driveModeOrganizerIIFE() {
+  let currentDriveMode = '';
+  const activeDriveMode = 'activeDriveMode';
+  const settingsMode = 'settingsMode';
+  return {
+    setCurrentDriveMode: (driveMode) => {
+      currentDriveMode = driveMode;
+    },
+    toggleSwitchDriveMode: () => {
+      if (currentDriveMode.length > 0) {
+        if (currentDriveMode === activeDriveMode) {
+          currentDriveMode = settingsMode;
+        } else {
+          currentDriveMode = activeDriveMode;
+        }
+      }
+    }
+  };
+})();
 
-console.log("batteryBoy", batteryBoy);
+
 
 function connectToReciever() {
 
@@ -152,7 +169,7 @@ function connectToReciever() {
   }).then(function (c) {
     console.log("Got Characteristic");
     char = c;
-    startWriting();
+    startPayloadStream();
   }).catch(error => {
     console.log("Error", error);
     if (error === 'No device found matching filters') {
@@ -166,47 +183,169 @@ function connectToReciever() {
 
 
 
-function startWriting() {
-  var busy = false;
-  var i = setInterval(function () {
-    if (!gatt.connected) {
+function startPayloadStream() {
+  let busy = false;
+  let i = setInterval(function () {
+    if (gatt === undefined || !gatt.connected) {
       clearInterval(i);
       return;
     }
     if (busy || isRemoteLocked) return;
     busy = true;
-    var n = analogRead(D28) * 255;
+    const joystickXAxisValue = analogRead(D28) * 255;
 
-    char.writeValue([n]).then(function () {
-      busy = false;
-    });
+    char.writeValue([joystickXAxisValue]).then(() => busy = false);
   }, 50);
 }
 
 
+function executeVoltageRead() {
+  const readBatteryInterval = setInterval(readBatteryVoltage, 100);
+
+  setTimeout(() => {
+    batteryFinal = batteryBoy.getAverageVoltage();
+    console.log("Updating display", batteryBoy.getRawDataAmount(), batteryFinal);
+    clearInterval(readBatteryInterval);
+    batteryBoy.clearSamples();
+  }, 2500);
+}
+
 function onInit() {
-  console.log("INIT");
-  clearInterval(draw);
+  console.log("-- ON INIT --");
+  clearInterval(activeDrawInterval);
+
+  executeVoltageRead();
 
   I2C1.setup(displayPins);
-  g = require("SSD1306").connect(I2C1, mainDraw, { height: 32 });
+  g = require("SSD1306").connect(I2C1, drawInitScreen, { height: 32 });
 
   require("FontHaxorNarrow7x17").add(Graphics);
 
   g.setFontHaxorNarrow7x17();
 
-  g.setFontAlign(0, 0, 3);
-
-  draw = setInterval(mainDraw, 100);
   batteryBoy.clearSamples();
-  batteryFinal = readBatteryVoltage();
-
 
   NRF.setTxPower(4);
   connectToReciever();
 
+
+  const drawDriveModeTimeout = setInterval(() => {
+    if (gatt !== undefined && gatt.connected) {
+      clearInterval(drawDriveModeTimeout);
+      drawDriveMode();
+    }
+  }, 2500);
+
+
+  // REMOVE ME LATER
+  setTimeout(() => {
+    clearInterval(drawDriveModeTimeout);
+    drawDriveMode();
+  }, 20 * 1000);
+
 }
 
+
+let animationCounter = 0;
+function drawInitScreen() {
+  clearInterval(activeDrawInterval);
+  g.clear();
+
+  const drawImgWrapper = (img, x, y) => g.drawImage(img, x, y);
+  drawImgWrapper.apply(null, connectionAnimationOptions[animationCounter % 8]);
+  animationCounter++
+
+  rx += 0.1;
+  ry += 0.1;
+  const rcx = Math.cos(rx), rsx = Math.sin(rx);
+  const rcy = Math.cos(ry), rsy = Math.sin(ry);
+  const project3Dto2D = (x, y, z) => {
+    var t;
+    t = x * rcy + z * rsy;
+    z = z * rcy - x * rsy;
+    x = t;
+    t = y * rcx + z * rsx;
+    z = z * rcx - y * rsx;
+    y = t;
+    z += 4;
+    return [109 + 40 * x / z, 16 + 32 * y / z];
+  }
+  const projectValue = 1;
+  let a, b;
+  // -z
+  a = project3Dto2D(-projectValue, -projectValue, -projectValue);
+  b = project3Dto2D(projectValue, -projectValue, -projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  a = project3Dto2D(projectValue, projectValue, -projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  b = project3Dto2D(-projectValue, projectValue, -projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  a = project3Dto2D(-projectValue, -projectValue, -projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  // z
+  a = project3Dto2D(-projectValue, -projectValue, projectValue);
+  b = project3Dto2D(projectValue, -projectValue, projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  a = project3Dto2D(projectValue, projectValue, projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  b = project3Dto2D(-projectValue, projectValue, projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  a = project3Dto2D(-projectValue, -projectValue, projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  // edges
+  a = project3Dto2D(-projectValue, -projectValue, -projectValue);
+  b = project3Dto2D(-projectValue, -projectValue, projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  a = project3Dto2D(projectValue, -projectValue, -projectValue);
+  b = project3Dto2D(projectValue, -projectValue, projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  a = project3Dto2D(projectValue, projectValue, -projectValue);
+  b = project3Dto2D(projectValue, projectValue, projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  a = project3Dto2D(-projectValue, projectValue, -projectValue);
+  b = project3Dto2D(-projectValue, projectValue, projectValue);
+  g.drawLine(a[0], a[1], b[0], b[1]);
+  g.flip(true);
+
+
+  activeDrawInterval = setInterval(drawInitScreen, 33.32);
+
+}
+
+
+
+function drawLock() {
+  if (!isRemoteLocked) {
+    g.drawImage(unlock, 128 - 31, 3);
+  }
+  else {
+    g.drawImage(lock, 128 - 27, 3);
+  }
+}
+
+function drawBoundingBox() {
+  g.drawRect(0, 0, 127, 31);
+}
+
+function drawDriveMode() {
+  clearInterval(activeDrawInterval);
+
+  g.setFontAlign(0, 0, 3);
+
+  g.clear();
+  drawBoundingBox();
+  drawLock();
+
+  g.drawString(batteryFinal, 58, 21);
+
+  g.flip();
+
+
+
+
+  activeDrawInterval = setInterval(drawDriveMode, 100);
+
+}
 
 
 function readBatteryVoltage() {
@@ -214,26 +353,10 @@ function readBatteryVoltage() {
   batVoltage = batVoltage * 6.59;
   const finalVoltage = Math.round(batVoltage * 100) / 100;
   batteryBoy.addEntry(batVoltage);
-  console.log("Reading batVoltage", finalVoltage);
+  console.log('B:', finalVoltage);
   return finalVoltage;
 }
-setInterval(readBatteryVoltage, 10000);
 
-setInterval(() => {
-  console.log("Updating display");
-  batteryFinal = batteryBoy.getAverageVoltage();
-}, 60 * 1000 * 1);
-
-// 60 * 1000 * 4
-// function handleYSwitching() {
-//   setInterval(() => {
-//     const yValue = analogRead(D29) * 255;
-
-//     if (yValue > ) {
-
-//     }
-//   }, 100);
-// }
 
 
 /**
@@ -243,6 +366,7 @@ setInterval(() => {
 setWatch((e) => {
   console.log("L");
   isRemoteLocked = !isRemoteLocked;
+  if (isRemoteLocked) executeVoltageRead();
 }, D27, { repeat: true, debounce: 1000, edge: 'falling' });
 
 /**
@@ -273,29 +397,6 @@ setWatch((e) => {
   console.log("S", shortClickCount);
 }, D27, { repeat: true, debounce: 25, edge: 'rising' });
 
-
-/**
- *  @description The main draw function fore the display;
- */
-
-
-
-function mainDraw() {
-  g.clear();
-
-  if (!isRemoteLocked) {
-    g.drawImage(unlock, 128 - 31, 3);
-  }
-  else {
-    g.drawImage(lock, 128 - 27, 3);
-  }
-
-
-  g.drawString(batteryFinal, 24 + 34, 21);
-
-
-  g.flip();
-}
 
 
 NRF.setServices({}, { uart: true }); // Switch to false to for disabling programming;
