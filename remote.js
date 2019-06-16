@@ -79,7 +79,7 @@ var rx = 0, ry = 0;
 let currentMode = null;
 
 var counter = 1;
-
+let cruisecontrolValue = null;
 var g;
 
 let isRemoteLocked = false;
@@ -89,7 +89,7 @@ let shortClickCount = 0;
 
 
 let activeDrawInterval = null;
-
+let temp = '';
 const batteryBoy = (function batteryBoyIIFE() {
   let rawData = [];
 
@@ -176,10 +176,11 @@ function connectToReciever() {
       setTimeout(() => {
         console.log('Retrying...');
         connectToReciever();
-      }, 10000);
+      }, 5000);
     }
   });
 }
+
 
 
 
@@ -192,7 +193,7 @@ function startPayloadStream() {
     }
     if (busy || isRemoteLocked) return;
     busy = true;
-    const joystickXAxisValue = analogRead(D28) * 255;
+    const joystickXAxisValue = cruisecontrolValue || analogRead(D28) * 255;
 
     char.writeValue([joystickXAxisValue]).then(() => busy = false);
   }, 50);
@@ -222,7 +223,8 @@ function onInit() {
   require("FontHaxorNarrow7x17").add(Graphics);
 
   g.setFontHaxorNarrow7x17();
-
+  g.setFontAlign(0, 0, 3);
+  temp = E.getTemperature().toFixed(1) + ' C';
   batteryBoy.clearSamples();
 
   NRF.setTxPower(4);
@@ -238,10 +240,10 @@ function onInit() {
 
 
   // REMOVE ME LATER
-  setTimeout(() => {
-    clearInterval(drawDriveModeTimeout);
-    drawDriveMode();
-  }, 20 * 1000);
+  // setTimeout(() => {
+  //   clearInterval(drawDriveModeTimeout);
+  //   drawDriveMode();
+  // }, 20 * 1000);
 
 }
 
@@ -253,7 +255,9 @@ function drawInitScreen() {
 
   const drawImgWrapper = (img, x, y) => g.drawImage(img, x, y);
   drawImgWrapper.apply(null, connectionAnimationOptions[animationCounter % 8]);
-  animationCounter++
+  animationCounter++;
+
+  g.drawString(temp, 30, 16);
 
   rx += 0.1;
   ry += 0.1;
@@ -269,7 +273,7 @@ function drawInitScreen() {
     y = t;
     z += 4;
     return [109 + 40 * x / z, 16 + 32 * y / z];
-  }
+  };
   const projectValue = 1;
   let a, b;
   // -z
@@ -330,10 +334,9 @@ function drawBoundingBox() {
 function drawDriveMode() {
   clearInterval(activeDrawInterval);
 
-  g.setFontAlign(0, 0, 3);
 
   g.clear();
-  drawBoundingBox();
+  // drawBoundingBox();
   drawLock();
 
   g.drawString(batteryFinal, 58, 21);
@@ -389,6 +392,11 @@ setWatch((e) => {
       console.log("SettingsMode");
     } else {
       // Toggle cruise
+      if (cruisecontrolValue === null) {
+        cruisecontrolValue = analogRead(D28) * 255;
+      } else {
+        cruisecontrolValue = null;
+      }
       console.log("Toggle cruise");
     }
     shortClickCount = 0;
@@ -397,7 +405,10 @@ setWatch((e) => {
   console.log("S", shortClickCount);
 }, D27, { repeat: true, debounce: 25, edge: 'rising' });
 
-
+NRF.on('disconnect', (reason) => {
+  console.log("board disconnected", reason);
+  onInit();
+});
 
 NRF.setServices({}, { uart: true }); // Switch to false to for disabling programming;
 NRF.setAdvertising({}, { showName: true, connectable: true, discoverable: true });

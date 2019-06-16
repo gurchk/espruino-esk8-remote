@@ -7,16 +7,16 @@
 - Lock behaviour, long press lock/unlock
 - Different modes, drive mode / settings mode dubble click for mode change
 - Battey voltage
+- Display on startup
 
 ### TODO
 - DONT LEAVE INIT SCREEN UNLESS REMOTE IS CONNECTED TIMEOUT ON 20 sec ???
-
 - Cruise control
-- Display on startup
+
 - Code cleanup, remove shit varaibles and normal functions
 - Security lockdown / programmer available
 - UART/VESC communication
-- Optimize drawing function
+- Oxptimize drawing function
 - Trip timer with getTime();
 - Implement temperature with E.getTemperature();
 - get Connection strength
