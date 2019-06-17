@@ -82,6 +82,8 @@ var counter = 1;
 let cruisecontrolValue = null;
 var g;
 
+let joystickXAxisValue;
+
 let isRemoteLocked = false;
 let modeChangeTimeout = null;
 
@@ -193,8 +195,7 @@ function startPayloadStream() {
     }
     if (busy || isRemoteLocked) return;
     busy = true;
-    const joystickXAxisValue = cruisecontrolValue || analogRead(D28) * 255;
-
+    joystickXAxisValue = cruisecontrolValue || analogRead(D28) * 255;
     char.writeValue([joystickXAxisValue]).then(() => busy = false);
   }, 50);
 }
@@ -393,7 +394,7 @@ setWatch((e) => {
     } else {
       // Toggle cruise
       if (cruisecontrolValue === null) {
-        cruisecontrolValue = analogRead(D28) * 255;
+        cruisecontrolValue = joystickXAxisValue;
       } else {
         cruisecontrolValue = null;
       }
@@ -410,10 +411,9 @@ NRF.on('disconnect', (reason) => {
   onInit();
 });
 
-NRF.setServices({}, { uart: true }); // Switch to false to for disabling programming;
-NRF.setAdvertising({}, { showName: true, connectable: true, discoverable: true });
+// NRF.setServices({}, { uart: true }); // Switch to false to for disabling programming;
+// NRF.setAdvertising({}, { showName: true, connectable: true, discoverable: true });
 
-onInit();
 
 
 
