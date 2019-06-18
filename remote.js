@@ -74,7 +74,7 @@ var batVoltage;
 
 var avgBatVoltage = 0;
 
-var batteryFinal = 0;
+var batteryFinalPercentage = 0;
 var rx = 0, ry = 0;
 let currentMode = null;
 
@@ -102,6 +102,13 @@ const batteryBoy = (function batteryBoyIIFE() {
       }, 0) / rawData.length;
       return this.roundTo(voltage, 2);
     },
+    getAveragePercentage: function () {
+      const mapBetween = (currentNum, minAllowed, maxAllowed, min, max) => {
+        return (maxAllowed - minAllowed) * (currentNum - min) / (max - min) + minAllowed;
+      };
+      const batteryPercentage = mapBetween(this.getAverageVoltage(), 0, 100, 3.3, 4.2);
+      return this.roundTo(batteryPercentage, 0) + '%';
+    },
     addEntry: (voltage) => {
       rawData.push(voltage);
     },
@@ -122,9 +129,9 @@ const batteryBoy = (function batteryBoyIIFE() {
       }
       const multiplicator = Math.pow(10, decimals);
       number = parseFloat((number * multiplicator).toFixed(11));
-      number = (Math.round(number) / multiplicator).toFixed(2);
+      number = (Math.round(number) / multiplicator).toFixed(decimals);
       if (negative) {
-        number = (number * -1).toFixed(2);
+        number = (number * -1).toFixed(decimals);
       }
       return number;
     }
@@ -206,8 +213,8 @@ function executeVoltageRead() {
   const readBatteryInterval = setInterval(readBatteryVoltage, 100);
 
   setTimeout(() => {
-    batteryFinal = batteryBoy.getAverageVoltage();
-    console.log("Updating display", batteryBoy.getRawDataAmount(), batteryFinal);
+    batteryFinalPercentage = batteryBoy.getAveragePercentage();
+    console.log("Updating display", batteryBoy.getRawDataAmount(), batteryFinalPercentage);
     cruisecontrolValue = null;
     clearInterval(readBatteryInterval);
     batteryBoy.clearSamples();
@@ -344,8 +351,8 @@ function drawDriveMode() {
   g.clear();
   drawLock();
 
-  g.drawString(batteryFinal, 58, 21);
-  const percentage = _joystickXAxisValue * 100 / 255
+  g.drawString(batteryFinalPercentage, 80, 18);
+  const percentage = _joystickXAxisValue * 100 / 255;
 
   drawThrottleXValueAnimation(percentage);
 
@@ -354,6 +361,7 @@ function drawDriveMode() {
   activeDrawInterval = setInterval(drawDriveMode, 33.3);
 
 }
+
 
 
 
@@ -383,6 +391,40 @@ setWatch((e) => {
   isRemoteLocked = !isRemoteLocked;
   if (isRemoteLocked) executeVoltageRead();
 }, D27, { repeat: true, debounce: 1000, edge: 'falling' });
+
+setWatch((e) => {
+  clearInterval(activeDrawInterval);
+  g.clear();
+  drawRemoteResetScreen();
+}, D27, { repeat: false, debounce: 9000, edge: 'falling' });
+
+
+function drawRemoteResetScreen() {
+
+  let resetCounter = 10;
+  activeDrawInterval = setInterval(() => {
+    if (resetCounter === 0) {
+      reset(true);
+    } else {
+      const seconds = resetCounter + ' s';
+      g.clear();
+      g.drawString('RE', 20, 21);
+      g.drawString('SETT', 37, 16);
+      g.drawString('ING', 54, 19.5);
+      g.drawString(seconds, 94, 15);
+      g.flip();
+      resetCounter--;
+    }
+  }, 1000);
+  setWatch(() => {
+    drawDriveMode();
+  }, D27, { repeat: false, debounce: 25, edge: 'rising' });
+
+
+  isRemoteLocked = !isRemoteLocked;
+  if (isRemoteLocked) executeVoltageRead();
+
+}
 
 /**
  * @description Watcher for Short presses aka cruise control and mode switching
@@ -440,12 +482,12 @@ NRF.on('disconnect', (reason) => {
   onInit();
 });
 
-// NRF.setServices({}, { uart: true }); // Switch to false to for disabling programming;
-// NRF.setAdvertising({}, { showName: true, connectable: true, discoverable: true });
+NRF.setServices({}, { uart: false }); // Switch to false to for disabling programming;
+
+NRF.setAdvertising([], { showName: false, connectable: false, scannable: false });
 
 
 
-onInit();
 
 // E.setFlags({pretokenise:1}) will allow JavaScript code in RAM to be heavily compacted, and to execute more quickly.
 
