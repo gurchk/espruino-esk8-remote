@@ -82,7 +82,7 @@ var counter = 1;
 let cruisecontrolValue = null;
 var g;
 
-let joystickXAxisValue;
+let _joystickXAxisValue;
 
 let isRemoteLocked = false;
 let modeChangeTimeout = null;
@@ -174,11 +174,11 @@ function connectToReciever() {
     startPayloadStream();
   }).catch(error => {
     console.log("Error", error);
-    if (error === 'No device found matching filters') {
+    if (error) {
       setTimeout(() => {
         console.log('Retrying...');
         connectToReciever();
-      }, 5000);
+      }, 1000);
     }
   });
 }
@@ -195,8 +195,9 @@ function startPayloadStream() {
     }
     if (busy || isRemoteLocked) return;
     busy = true;
-    joystickXAxisValue = cruisecontrolValue || analogRead(D28) * 255;
-    char.writeValue([joystickXAxisValue]).then(() => busy = false);
+    _joystickXAxisValue = cruisecontrolValue || analogRead(D28) * 255;
+    // console.log(_joystickXAxisValue);
+    char.writeValue([_joystickXAxisValue]).then(() => busy = false);
   }, 50);
 }
 
@@ -207,6 +208,7 @@ function executeVoltageRead() {
   setTimeout(() => {
     batteryFinal = batteryBoy.getAverageVoltage();
     console.log("Updating display", batteryBoy.getRawDataAmount(), batteryFinal);
+    cruisecontrolValue = null;
     clearInterval(readBatteryInterval);
     batteryBoy.clearSamples();
   }, 2500);
@@ -237,7 +239,7 @@ function onInit() {
       clearInterval(drawDriveModeTimeout);
       drawDriveMode();
     }
-  }, 2500);
+  }, 500);
 
 
   // REMOVE ME LATER
@@ -247,6 +249,8 @@ function onInit() {
   // }, 20 * 1000);
 
 }
+
+
 
 
 let animationCounter = 0;
@@ -321,10 +325,11 @@ function drawInitScreen() {
 
 function drawLock() {
   if (!isRemoteLocked) {
-    g.drawImage(unlock, 128 - 31, 3);
+    g.drawImage(unlock, 128 - 31, 5);
   }
   else {
-    g.drawImage(lock, 128 - 27, 3);
+    g.drawImage(lock, 128 - 27, 5);
+    cruisecontrolValue = null;
   }
 }
 
@@ -337,20 +342,26 @@ function drawDriveMode() {
 
 
   g.clear();
-  // drawBoundingBox();
   drawLock();
 
   g.drawString(batteryFinal, 58, 21);
+  const percentage = _joystickXAxisValue * 100 / 255
+
+  drawThrottleXValueAnimation(percentage);
 
   g.flip();
 
-
-
-
-  activeDrawInterval = setInterval(drawDriveMode, 100);
+  activeDrawInterval = setInterval(drawDriveMode, 33.3);
 
 }
 
+
+
+function drawThrottleXValueAnimation(percentage) {
+  const x1 = Math.abs(127 * (percentage / 100) - 127);
+  g.drawRect(x1, 1, 64, 0);
+  g.drawRect(x1, 3, 64, 2);
+}
 
 function readBatteryVoltage() {
   batVoltage = analogRead(D31);
@@ -394,17 +405,35 @@ setWatch((e) => {
     } else {
       // Toggle cruise
       if (cruisecontrolValue === null) {
-        cruisecontrolValue = joystickXAxisValue;
+        cruisecontrolValue = _joystickXAxisValue;
       } else {
         cruisecontrolValue = null;
       }
       console.log("Toggle cruise");
+      setTimeout(() => {
+        const killCruiseControlXInterval = setInterval((e) => {
+          const joystickXAxisValue = analogRead(D28) * 255;
+          if (joystickXAxisValue >= 132 || joystickXAxisValue <= 122) {
+            cruisecontrolValue = null;
+            clearInterval(killCruiseControlXInterval);
+            clearInterval(killCruiseControlYInterval);
+          }
+        }, 50);
+        const killCruiseControlYInterval = setInterval((e) => {
+          const joystickYAxisValue = analogRead(D29) * 255;
+          if (joystickYAxisValue >= 132 || joystickYAxisValue <= 120) {
+            cruisecontrolValue = null;
+            clearInterval(killCruiseControlXInterval);
+            clearInterval(killCruiseControlYInterval);
+          }
+        }, 50);
+      }, 700);
     }
     shortClickCount = 0;
   }, 200);
 
   console.log("S", shortClickCount);
-}, D27, { repeat: true, debounce: 25, edge: 'rising' });
+}, D27, { repeat: true, debounce: 50, edge: 'rising' });
 
 NRF.on('disconnect', (reason) => {
   console.log("board disconnected", reason);
@@ -416,7 +445,7 @@ NRF.on('disconnect', (reason) => {
 
 
 
-
+onInit();
 
 // E.setFlags({pretokenise:1}) will allow JavaScript code in RAM to be heavily compacted, and to execute more quickly.
 

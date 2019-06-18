@@ -8,6 +8,7 @@
 - Different modes, drive mode / settings mode dubble click for mode change
 - Battey voltage
 - Display on startup
+- Implement temperature with E.getTemperature();
 
 ### TODO
 - DONT LEAVE INIT SCREEN UNLESS REMOTE IS CONNECTED TIMEOUT ON 20 sec ???
@@ -18,5 +19,4 @@
 - UART/VESC communication
 - Oxptimize drawing function
 - Trip timer with getTime();
-- Implement temperature with E.getTemperature();
 - get Connection strength
