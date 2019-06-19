@@ -20,7 +20,7 @@ function onInit() {
         },
       },
     },
-    { uart: true } // FALSE IS DISABLING THE REPL
+    { uart: false } // FALSE IS DISABLING THE REPL
   );
 
   NRF.setAdvertising({}, { name: name });

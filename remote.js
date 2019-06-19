@@ -68,17 +68,13 @@ var gatt;
 var char;
 let service;
 
-var on = false;
 
 var batVoltage;
 
-var avgBatVoltage = 0;
 
 var batteryFinalPercentage = 0;
 var rx = 0, ry = 0;
-let currentMode = null;
 
-var counter = 1;
 let cruisecontrolValue = null;
 var g;
 
@@ -138,25 +134,25 @@ const batteryBoy = (function batteryBoyIIFE() {
   };
 })();
 
-const driveModeOrganizer = (function driveModeOrganizerIIFE() {
-  let currentDriveMode = '';
-  const activeDriveMode = 'activeDriveMode';
-  const settingsMode = 'settingsMode';
-  return {
-    setCurrentDriveMode: (driveMode) => {
-      currentDriveMode = driveMode;
-    },
-    toggleSwitchDriveMode: () => {
-      if (currentDriveMode.length > 0) {
-        if (currentDriveMode === activeDriveMode) {
-          currentDriveMode = settingsMode;
-        } else {
-          currentDriveMode = activeDriveMode;
-        }
-      }
-    }
-  };
-})();
+// const driveModeOrganizer = (function driveModeOrganizerIIFE() {
+//   let currentDriveMode = '';
+//   const activeDriveMode = 'activeDriveMode';
+//   const settingsMode = 'settingsMode';
+//   return {
+//     setCurrentDriveMode: (driveMode) => {
+//       currentDriveMode = driveMode;
+//     },
+//     toggleSwitchDriveMode: () => {
+//       if (currentDriveMode.length > 0) {
+//         if (currentDriveMode === activeDriveMode) {
+//           currentDriveMode = settingsMode;
+//         } else {
+//           currentDriveMode = activeDriveMode;
+//         }
+//       }
+//     }
+//   };
+// })();
 
 
 
@@ -195,7 +191,7 @@ function connectToReciever() {
 
 function startPayloadStream() {
   let busy = false;
-  let i = setInterval(function () {
+  let i = setInterval(() => {
     if (gatt === undefined || !gatt.connected) {
       clearInterval(i);
       return;
@@ -358,7 +354,7 @@ function drawDriveMode() {
 
   g.flip();
 
-  activeDrawInterval = setInterval(drawDriveMode, 33.3);
+  activeDrawInterval = setInterval(drawDriveMode, 33.32);
 
 }
 

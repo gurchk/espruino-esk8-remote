@@ -20,5 +20,4 @@
 - Code cleanup, remove shit varaibles and normal functions
 - UART/VESC communication
 - Oxptimize drawing function
-- Trip timer with getTime();
 - get Connection strength
