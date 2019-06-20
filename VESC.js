@@ -22,13 +22,13 @@ MOD123.prototype.C = {
 };
 
 /** Put most of my comments outside the functions... */
-MOD123.prototype.foo = function() {
+MOD123.prototype.foo = function () {
   // you can use C.PRIVATE
   // or this.C.PUBLIC
 };
 
 /** Put most of my comments outside the functions... */
-MOD123.prototype.bar = function() {};
+MOD123.prototype.bar = function () { };
 
 /** 
 /**
@@ -36,7 +36,7 @@ MOD123.prototype.bar = function() {};
  * @example `require('VESC.js').connect({rx,tx, baudrate? = 9600, ck?})`
  */
 
-exports.connect = function({ rx, tx, baudrate = 9600, ck }) {
+exports.connect = function ({ rx, tx, baudrate = 9600, ck }) {
   const vesc = new VESC(rx, tx);
   Serial1.setup(baudrate, { tx, rx, ck });
 };
