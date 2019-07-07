@@ -5,6 +5,8 @@ For images or questions; https://www.electric-skateboard.builders/t/haya-12s4p-d
 
 Code is WIP and should be used with caution.
 
+The light version is safer then the feature packed one.
+
 ### VESC UART Info
 
 It is a uint8_t byte stream.
