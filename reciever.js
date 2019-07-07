@@ -1,5 +1,6 @@
 let on = false;
 
+
 const name = 'PearlMcGrain';
 
 const pwmPin = D7;
@@ -20,9 +21,8 @@ function onInit() {
         },
       },
     },
-    { uart: false } // FALSE IS DISABLING THE REPL
+    { uart: true } // FALSE IS DISABLING THE REPL
   );
-
   NRF.setAdvertising({}, { name: name });
 }
 

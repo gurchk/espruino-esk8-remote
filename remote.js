@@ -426,6 +426,31 @@ function drawRemoteResetScreen() {
  * @description Watcher for Short presses aka cruise control and mode switching
  */
 
+// const drawHandler = (function drawHandlerIIFE() {
+//   let activeDrawInterval = null;
+//   let activeDrawPromise = null;
+
+//   const clearActiveInterval = () => {
+//     if (activeDrawInterval !== null) {
+//       clearInterval(activeDrawInterval);
+//     }
+//   }
+//   return {
+//     setDrawInterval: (callback) => {
+//       activeDrawInterval = setInterval(() => {
+//         activeDrawPromise = new Promise(resolve => {
+//           clearActiveInterval();
+//           callback();
+//           resolve();
+//         })
+//       });
+//     }
+//   }
+//   // WIP
+// })();
+
+
+
 setWatch((e) => {
   const diff = e.time - e.lastTime;
   if (diff > 0.9) {
@@ -434,41 +459,41 @@ setWatch((e) => {
   }
 
 
-  shortClickCount++;
-  if (modeChangeTimeout) clearTimeout(modeChangeTimeout);
+  // shortClickCount++;
+  // if (modeChangeTimeout) clearTimeout(modeChangeTimeout);
 
-  modeChangeTimeout = setTimeout(() => {
-    if (shortClickCount === 2) {
-      console.log("SettingsMode");
-    } else {
-      // Toggle cruise
-      if (cruisecontrolValue === null) {
-        cruisecontrolValue = _joystickXAxisValue;
-      } else {
+  // modeChangeTimeout = setTimeout(() => {
+  // if (shortClickCount === 2) {
+  //   console.log("SettingsMode");
+  // } else {
+  // Toggle cruise
+  if (cruisecontrolValue === null) {
+    cruisecontrolValue = _joystickXAxisValue;
+  } else {
+    cruisecontrolValue = null;
+  }
+  console.log("Toggle cruise");
+  setTimeout(() => {
+    const killCruiseControlXInterval = setInterval((e) => {
+      const joystickXAxisValue = analogRead(D28) * 255;
+      if (joystickXAxisValue >= 132 || joystickXAxisValue <= 122) {
         cruisecontrolValue = null;
+        clearInterval(killCruiseControlXInterval);
+        clearInterval(killCruiseControlYInterval);
       }
-      console.log("Toggle cruise");
-      setTimeout(() => {
-        const killCruiseControlXInterval = setInterval((e) => {
-          const joystickXAxisValue = analogRead(D28) * 255;
-          if (joystickXAxisValue >= 132 || joystickXAxisValue <= 122) {
-            cruisecontrolValue = null;
-            clearInterval(killCruiseControlXInterval);
-            clearInterval(killCruiseControlYInterval);
-          }
-        }, 50);
-        const killCruiseControlYInterval = setInterval((e) => {
-          const joystickYAxisValue = analogRead(D29) * 255;
-          if (joystickYAxisValue >= 132 || joystickYAxisValue <= 120) {
-            cruisecontrolValue = null;
-            clearInterval(killCruiseControlXInterval);
-            clearInterval(killCruiseControlYInterval);
-          }
-        }, 50);
-      }, 700);
-    }
-    shortClickCount = 0;
-  }, 200);
+    }, 50);
+    const killCruiseControlYInterval = setInterval((e) => {
+      const joystickYAxisValue = analogRead(D29) * 255;
+      if (joystickYAxisValue >= 132 || joystickYAxisValue <= 120) {
+        cruisecontrolValue = null;
+        clearInterval(killCruiseControlXInterval);
+        clearInterval(killCruiseControlYInterval);
+      }
+    }, 50);
+  }, 700);
+
+  //   shortClickCount = 0;
+  // }, 200);
 
   console.log("S", shortClickCount);
 }, D27, { repeat: true, debounce: 50, edge: 'rising' });

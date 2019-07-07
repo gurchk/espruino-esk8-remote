@@ -3,6 +3,8 @@
 A remote + reciever software i developt with help from AntiumOne. Uses two MDBT42Q boards as reciever and transmitter.
 For images or questions; https://www.electric-skateboard.builders/t/haya-12s4p-dual-vesc6-12fifties-first-build-6374/91605/5
 
+Code is WIP and should be used with caution.
+
 ### VESC UART Info
 
 It is a uint8_t byte stream.
