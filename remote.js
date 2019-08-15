@@ -37,7 +37,7 @@ const csTwo = {
 
 
 const csFull = {
-  width: 14, height: 13, bpp: 1,
+  width: 14, height: D, bpp: 1,
   transparent: 0,
   buffer: E.toArrayBuffer(atob("H8CAhPkkEacOoHq/6genDkEU+QgIH8A="))
 };
