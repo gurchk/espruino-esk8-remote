@@ -9,7 +9,7 @@ const backLightPin = D18;
 
 const neopixelBase = new Uint8Array(9 * 3);
 
-
+var arr = new Uint8ClampedArray(9 * 3);
 var pos = 0;
 var interval;
 var breakLightOff = true;

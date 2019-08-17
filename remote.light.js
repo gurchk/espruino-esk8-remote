@@ -9,7 +9,7 @@ pinMode(D22, 'input_pullup');
 const recieverName = 'PearlMcGrain';
 const primaryService = '446e0001-85de-1237-0fe0-849acbd40fc3';
 const pwmCharacteristic = '446e0002-85de-1237-0fe0-849acbd40fc3';
-const lightCharacteristic = '446e0003-0890-4783-b9b5-36ff9f898937';
+const lightCharacteristic = '446e0003-85de-1237-0fe0-849acbd40fc3';
 const queue = [];
 var gatt;
 var char;
@@ -160,10 +160,9 @@ function startPayloadStream() {
         }
         if (busy || isRemoteLocked) return;
         busy = true;
-        const read = analogRead(D28);
 
 
-        _joystickXAxisValue = 0 - (read * 255) * 2 + 235;
+        _joystickXAxisValue = 0 - (analogRead(D28) * 255) * 2 + 235;
         char.writeValue([_joystickXAxisValue]).then(() => busy = false);
     }, 50);
 }
